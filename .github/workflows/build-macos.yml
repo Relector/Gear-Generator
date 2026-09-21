@@ -1,0 +1,44 @@
+name: Build macOS Application
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build-mac:
+    runs-on: macos-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    - name: Install Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pyinstaller numpy matplotlib ezdxf cadquery
+
+    - name: Build macOS App Bundle
+      run: |
+        pyinstaller --noconfirm --windowed \
+          --name "GearCADSuite" \
+          --icon="Gear-icon.icns" \
+          --collect-all matplotlib \
+          --collect-all ezdxf \
+          Gear_App_V1.5.py
+
+    - name: Zip App Bundle
+      run: |
+        cd dist
+        zip -r GearCADSuite-macOS.zip GearCADSuite.app
+
+    - name: Upload Build Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: GearCADSuite-macOS-Build
+        path: dist/GearCADSuite-macOS.zip
