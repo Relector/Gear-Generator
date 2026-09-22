@@ -17,7 +17,7 @@ jobs:
       run: pip install pyinstaller numpy matplotlib ezdxf cadquery
     - name: Build macOS App
       run: |
-        pyinstaller --noconfirm --windowed --name "GearCADSuite-Mac" --icon="Gear-icon.icns" --collect-all matplotlib --collect-all ezdxf gear_app.py
+        pyinstaller --noconfirm --windowed --name "GearCADSuite-Mac" --icon="Gear-icon.icns" --collect-all matplotlib --collect-all ezdxf GearCADsuite.py
     - name: Zip App Bundle
       run: |
         cd dist
@@ -39,7 +39,7 @@ jobs:
       run: pip install pyinstaller numpy matplotlib ezdxf cadquery
     - name: Build Windows Exe (Directory Mode for Fast Startup)
       run: |
-        pyinstaller --noconfirm --onedir --windowed --name "GearCADSuite-Win" --collect-all matplotlib --collect-all ezdxf gear_app.py
+        pyinstaller --noconfirm --onedir --windowed --name "GearCADSuite-Win" --collect-all matplotlib --collect-all ezdxf GearCADsuite.py
     - name: Zip Windows Folder
       run: |
         Compress-Archive -Path dist\GearCADSuite-Win -DestinationPath dist\GearCADSuite-Windows.zip
