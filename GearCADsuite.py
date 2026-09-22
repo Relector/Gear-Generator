@@ -1,5 +1,5 @@
 """
-Parametric Multi-Standard Gear CAD Suite - Gear App V1.5
+Parametric Multi-Standard Gear CAD Suite - Gear App V1.6
 =========================================================
 File: gear_app.py
 Author: Senior Computational CAD, Mechanical Geometry & Swiss Horological Software Engineer
@@ -741,8 +741,7 @@ class UnifiedGearEngine:
 
         if "Internal" in p.gear_type:
             r_outer = p.outer_blank_diameter / 2.0
-            margin = 6.0 if "Epicycloidal" in p.gear_type else 20.0
-            min_r_outer = (dims["d"] + margin * float(p.module)) / 2.0
+            min_r_outer = r_f + (0.2 * float(p.module))
             if r_outer < min_r_outer:
                 r_outer = min_r_outer
 
@@ -822,6 +821,7 @@ class UnifiedGearEngine:
             "r_a": dims["r_a"],
             "r_f": dims["r_f"],
             "r_bore": r_bore,
+            "r_outer": r_outer if "Internal" in p.gear_type else 0.0,
             "circular_pitch": dims["circular_pitch"],
             "tooth_thickness": dims["tooth_thickness"],
             "space_width": dims["space_width"],
@@ -1185,7 +1185,7 @@ class GearCADApplication(tk.Tk):
         self.ctrl_z_mate.pack(fill=tk.X)
 
         self.ctrl_ks = SynchronizedSliderEntry(
-            self.epicycloid_frame, "Tooth Thickness Ratio (s/p)", from_=0.35, to=0.65, step=0.005, default_val=0.53,
+            self.epicycloid_frame, "Tooth Thickness Ratio (s/p)", from_=0.35, to=0.65, step=0.005, default_val=(1.41 / math.pi),
             on_change=self._on_custom_proportion_changed, style="Sidebar.TFrame"
         )
         self.ctrl_ks.pack(fill=tk.X)
@@ -1276,7 +1276,7 @@ class GearCADApplication(tk.Tk):
         self.ctrl_kw_h.pack(fill=tk.X)
 
         self.ctrl_outer_diam = SynchronizedSliderEntry(
-            parent, "Outer Blank Diameter (D_outer)", from_=10.0, to=500.0, step=1.0, default_val=50.0, unit="mm",
+            parent, "Outer Blank Diameter (D_outer)", from_=1.0, to=500.0, step=0.1, default_val=10.0, unit="mm",
             on_change=self._on_control_changed, style="Sidebar.TFrame"
         )
         self.ctrl_outer_diam.pack(fill=tk.X)
@@ -1577,7 +1577,12 @@ class GearCADApplication(tk.Tk):
             self.readout_widgets["metric_3"].configure(text=f"{calc['d_a']:.3f} mm")
             self.readout_widgets["metric_4"].configure(text=f"{calc['d_f']:.3f} mm")
             self.readout_widgets["metric_5"].configure(text=f"{calc['circular_pitch']:.3f} mm")
-            self.readout_widgets["metric_6"].configure(text=f"{calc['tooth_thickness']:.3f} mm")
+            
+            if params.module <= 0.20:
+                self.readout_widgets["metric_6"].configure(text=f"{calc['tooth_thickness']:.4f} mm")
+            else:
+                self.readout_widgets["metric_6"].configure(text=f"{calc['tooth_thickness']:.3f} mm")
+                
             self.readout_widgets["metric_8"].configure(text=f"{calc['bottom_clearance']:.3f} mm")
 
             self._render_cad_preview(calc)
@@ -1752,18 +1757,21 @@ class GearCADApplication(tk.Tk):
             doc.layers.add(name="ROOT_CIRCLE", color=6)
 
             outer_closed = data["outer_perimeter"] + [data["outer_perimeter"][0]]
-
+            
             if "Internal" in data["gear_type"]:
                 doc.layers.add(name="OUTER_RING", color=7)
-                msp.add_lwpolyline(outer_closed, dxfattribs={"layer": "OUTER_RING", "closed": True})
+                msp.add_circle((0.0, 0.0), radius=data["r_outer"], dxfattribs={"layer": "OUTER_RING"})
                 if data["bore_perimeter"]:
                     bore_closed = data["bore_perimeter"] + [data["bore_perimeter"][0]]
-                    msp.add_lwpolyline(bore_closed, dxfattribs={"layer": "CONTOUR", "closed": True})
+                    msp.add_spline(bore_closed, dxfattribs={"layer": "CONTOUR"})
             else:
-                msp.add_lwpolyline(outer_closed, dxfattribs={"layer": "CONTOUR", "closed": True})
+                msp.add_spline(outer_closed, dxfattribs={"layer": "CONTOUR"})
                 if data["bore_perimeter"]:
-                    bore_closed = data["bore_perimeter"] + [data["bore_perimeter"][0]]
-                    msp.add_lwpolyline(bore_closed, dxfattribs={"layer": "BORE", "closed": True})
+                    if not data.get("enable_keyway", False):
+                        msp.add_circle((0.0, 0.0), radius=data["r_bore"], dxfattribs={"layer": "BORE"})
+                    else:
+                        bore_closed = data["bore_perimeter"] + [data["bore_perimeter"][0]]
+                        msp.add_lwpolyline(bore_closed, dxfattribs={"layer": "BORE", "closed": True})
 
             msp.add_circle((0.0, 0.0), data["r"], dxfattribs={"layer": "PITCH_CIRCLE"})
             msp.add_circle((0.0, 0.0), data["r_f"], dxfattribs={"layer": "ROOT_CIRCLE"})
