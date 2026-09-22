@@ -1,0 +1,50 @@
+name: Build Desktop Applications
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+    - name: Install Dependencies
+      run: pip install pyinstaller numpy matplotlib ezdxf cadquery
+    - name: Build macOS App
+      run: |
+        pyinstaller --noconfirm --windowed --name "GearCADSuite-Mac" --icon="Gear-icon.icns" --collect-all matplotlib --collect-all ezdxf gear_app.py
+    - name: Zip App Bundle
+      run: |
+        cd dist
+        zip -r GearCADSuite-macOS.zip GearCADSuite-Mac.app
+    - name: Upload macOS Artifact
+      uses: actions/upload-artifact@v5
+      with:
+        name: GearCADSuite-macOS
+        path: dist/GearCADSuite-macOS.zip
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+    - name: Install Dependencies
+      run: pip install pyinstaller numpy matplotlib ezdxf cadquery
+    - name: Build Windows Exe (Directory Mode for Fast Startup)
+      run: |
+        pyinstaller --noconfirm --onedir --windowed --name "GearCADSuite-Win" --collect-all matplotlib --collect-all ezdxf gear_app.py
+    - name: Zip Windows Folder
+      run: |
+        Compress-Archive -Path dist\GearCADSuite-Win -DestinationPath dist\GearCADSuite-Windows.zip
+    - name: Upload Windows Artifact
+      uses: actions/upload-artifact@v5
+      with:
+        name: GearCADSuite-Windows
+        path: dist\GearCADSuite-Windows.zip
