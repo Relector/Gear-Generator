@@ -1000,7 +1000,7 @@ class GearCADApplication(tk.Tk):
     def __init__(self):
         super().__init__()
 
-        self.title("Parametric Multi-Standard Gear CAD Suite (Gear App V1.2)")
+        self.title("GearCADsuite V1.6.0")
         self.geometry("1400x940")
         self.minsize(1150, 780)
 
