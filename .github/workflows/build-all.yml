@@ -4,8 +4,11 @@ on:
   push:
     branches: [ "main" ]
     tags:
-      - 'v*' # Automatically triggers when you publish a new release tag (e.g., v1.7.0)
+      - '*' # Triggers the release upload on ANY tag name you use
   workflow_dispatch:
+
+permissions:
+  contents: write # CRITICAL: Gives the action permission to upload files to the Release page
 
 jobs:
   build-macos:
@@ -75,4 +78,4 @@ jobs:
       uses: softprops/action-gh-release@v2
       if: startsWith(github.ref, 'refs/tags/')
       with:
-        files: dist\GearCADSuite-Windows.zip
+        files: dist/GearCADSuite-Windows.zip
